@@ -9,7 +9,7 @@ API = Twitter().instance()
 waitQuery = 100
 waitTime = 2.0
 engineBlow = 1
-csvFile = open('hasil_crawl.csv', 'w', encoding='utf-8')
+csvFile = open('statuses_jokowi.csv', 'w', encoding='utf-8')
 csvWriter = csv.writer(csvFile)
 
 def search() :
@@ -45,6 +45,17 @@ def search() :
         except Exception as e:
             error += 1
             print('[EXCEPTION] Stream data: ' + str(e))
+
+def status(who) :
+    global API, waitQuery, waitTime, engineBlow
+    statuses = API.user_timeline(screen_name= who)
+    i = 0
+    for status in tweepy.Cursor(API.user_timeline, screen_name=who, tweet_mode="extended").items():
+        csvWriter.writerow([i ,str(status.full_text), status.created_at, status.retweet_count, status.favorite_count])
+        print("Tweet ke-" + str(i) + " diambil : "+ str(status.full_text))
+        i += 1
+    print("Crawling tweet "+ who+ " selesai!")
+    
 
 def crawl():
     global API, waitQuery, waitTime, engineBlow
@@ -88,18 +99,24 @@ def paginate(iterable, page_size):
         yield page
 
 
+def followers():
 
-followers = API.followers_ids(screen_name='jokowi')
+    followers = API.followers_ids(screen_name='jokowi')
 
-for page in paginate(followers, 100):
-    results = API.lookup_users(user_ids=page)
-    for result in results:
-        print("mengambil data milik : "+ result.screen_name)
-        # users = result._json['users']
-        csvWriter.writerow([result.id, result.name, result.screen_name])
-    print("Halaman berikutnya")
+    for page in paginate(followers, 100):
+        results = API.lookup_users(user_ids=page)
+        for result in results:
+            print("mengambil data milik : "+ result.screen_name)
+            # users = result._json['users']
+            if result.location == "":
+                csvWriter.writerow([result.id, result.name, result.screen_name, "NA"])
+            else:
+                csvWriter.writerow([result.id, result.name, result.screen_name, result.location])
+        print("Halaman berikutnya")
 
-print("Crawling selesai")
-        # print(result.screen_name)
+    print("Crawling selesai")
 
-# crawl()
+
+
+status("jokowi")
+# followers()
